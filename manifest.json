@@ -1,0 +1,10 @@
+{
+  "id": "wavesign",
+  "name": "WaveSign",
+  "version": "0.1.0",
+  "minAppVersion": "1.11.4",
+  "description": "Create and verify tamper-evident authentication packages for images and PDFs.",
+  "author": "WaveSign",
+  "authorUrl": "https://wave-sign.com",
+  "isDesktopOnly": false
+}

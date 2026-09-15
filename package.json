@@ -1,0 +1,23 @@
+{
+  "name": "wavesign-obsidian",
+  "version": "0.1.0",
+  "description": "WaveSign plugin for Obsidian",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc --noEmit --skipLibCheck && node esbuild.config.mjs production",
+    "test": "tsc src/naming.ts --outDir .test-build --module ESNext --target ES2021 --moduleResolution node --skipLibCheck && node tests/naming.test.mjs"
+  },
+  "keywords": ["obsidian", "file-authentication", "tamper-evident"],
+  "license": "MIT",
+  "dependencies": {
+    "fflate": "^0.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.17",
+    "esbuild": "0.25.5",
+    "obsidian": "latest",
+    "typescript": "^5.8.3"
+  }
+}
