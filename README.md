@@ -4,7 +4,7 @@ WaveSign creates and verifies tamper-evident authentication packages for images 
 
 ## Status
 
-Version `0.1.0` is an early beta. Install it manually in a test vault or through BRAT after a beta release is published.
+Version `0.1.0` is an early beta. Install it manually in a test vault or through BRAT after a beta release is published. Obsidian 1.11.5 or later is required; this is the first desktop release with Secret Storage encrypted at rest.
 
 An account is required. Connecting opens `wave-sign.com` in the browser for a one-time approval; the plugin never receives your account password. The resulting integration token is limited to file signing and verification, expires after 90 days, and can be revoked by disconnecting.
 
