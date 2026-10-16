@@ -14,16 +14,17 @@ Verified 2026-10-16 on Windows, Obsidian 1.14.4, in a separate test vault with s
 - An intentionally wrong key yields Verification failed with the combined tampering/invalid-key verdict.
 - Verification progress and the final result remain visible in a modal until dismissed.
 - Plugin settings contain only the secret reference, connection ID, and connection time; no plaintext token or passphrase fields.
+- After the owner clicked Disconnect, the real settings screen showed Not connected and the saved connection ID/time were empty. A signing attempt stopped before upload confirmation and created no additional package.
 
 ## Automated checks
 
-`npm test` covers output naming, strict verification-response validation, successful and rejected requests, timeout handling, pending/success/failure/error modal states, and late responses after dismissal. `npm run build` passes TypeScript checking and produces the plugin bundle.
+`npm test` covers output naming, strict verification-response validation, successful and rejected requests, timeout handling, pending/success/failure/error modal states, and late responses after dismissal. Tests also execute the real plugin class with a fake Obsidian host to confirm disconnected sign/verify never reach the API, successful revocation clears local settings, and failed remote revocation still removes the local credential while warning the user. `npm run build` passes TypeScript checking and produces the plugin bundle.
 
 These tests do not establish formal cryptographic guarantees.
 
 ## Still pending before external beta
 
-- Complete the actual desktop Disconnect flow and verify the disconnected state and rejected local operations. Service-side token revocation was already tested separately against production.
+- Actual desktop disconnection and its local guard passed. Service-side token revocation was tested separately against production; the old real desktop token was not extracted from SecretStorage for an independent post-disconnect API query.
 - Complete focused failure-mode review (offline/rate-limit/error responses, malformed ZIP/JSON, partial-output cleanup, and cancellation).
 - Mobile, macOS, and Linux have not been tested. Do not describe them as validated.
 - No beta tag/release or Community directory submission has been published.
