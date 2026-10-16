@@ -16,7 +16,7 @@ This release remains a **draft** until the final candidate smoke test and releas
 
 - Obsidian 1.11.5 or later, a WaveSign account, and internet access.
 - Real application testing: Windows, Obsidian 1.14.4. macOS, Linux, Android, and iOS are not yet validated in Obsidian. Automated host-mocked tests are not a substitute for real-app tests.
-- The real desktop signing/verification tests predate the final failure-handling changes. A final candidate smoke test remains pending.
+- The final hardened candidate passed real Windows connection, four-format signing, and individual verification of all four new outputs, preserving originals. The final owner-operated Disconnect check and release review remain pending.
 - Selected files and passphrases are sent over HTTPS and processed server-side. Passphrases are not stored by the plugin; no client-side telemetry is included.
 - Verification requires the signed file, matching JSON, and original passphrase. Keep both output files together; lost JSON cannot currently be regenerated.
 - JPG/WEBP outputs are PNG. PDFs are rasterized image-PDFs, losing selectable/searchable text, forms, annotations, and original structure.

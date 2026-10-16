@@ -40,8 +40,21 @@ The development SDK is pinned to Obsidian 1.14.4 with a refreshed lockfile, repl
 ## Still pending before external beta
 
 - Actual desktop disconnection and its local guard passed. Service-side token revocation was tested separately against production; the old real desktop token was not extracted from SecretStorage for an independent post-disconnect API query.
-- The focused mocked failure-mode review above passed. Run one final real Obsidian connect/sign/verify/disconnect smoke test against the final candidate bundle; previous real-app acceptance predates those hardening changes.
+- The focused mocked failure-mode review passed. The final candidate's real connection, four-format signing, and all four output-verification checks also passed as recorded below. The owner has been asked to finish the final candidate Disconnect check.
 - Mobile, macOS, and Linux have not been tested. Do not describe them as validated.
 - A draft beta may be prepared after CI, but must stay unpublished until the final candidate smoke test and release review. No Community directory submission has been made.
 
 The proprietary signing core and private service credential are not part of this repository or its release assets. Operation keys, account codes, tokens, and signature contents must not be added to test reports.
+
+## Final 0.1.0 candidate smoke test
+
+Tested 2026-10-16 in Windows Obsidian 1.14.4 with the installed bundle matching the attested GitHub draft release. `main.js` SHA-256: `aeb41cc0122bd2cb88368b2549e18d1152e6a9d2c3d394d8a3780ae3b9bdaaf2`.
+
+- The owner reconnected the test vault; its actual settings panel showed Connected.
+- Signing the same four unique synthetic attachments produced new versioned pairs, preserving the earlier outputs: `sample-5.wavesigned.png` (PNG input), `sample-6.wavesigned.png` (JPG input), `sample-7.wavesigned.png` (WEBP input), and `sample-8.wavesigned.pdf` (two-page PDF), each with its adjacent `.wavesign.sig.json`.
+- Each of those four new outputs was individually verified through its real Obsidian file menu against production. All four returned Authentic / AUTHENTIC in the persistent result modal.
+- SHA-256 checks confirmed all four originals and `Start here.md` were byte-identical. No `.wavesign-tmp-*` files remained.
+- The disposable operation key was cleared from temporary test memory and was not written to reports or plugin settings.
+- The owner was asked to click Disconnect for the last candidate account-cleanup check. This final action is not yet recorded as complete.
+
+The release remains a draft. This smoke test does not establish macOS/Linux/mobile app compatibility or change the outstanding platform/release-review requirements.
