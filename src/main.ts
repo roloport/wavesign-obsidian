@@ -11,6 +11,7 @@ import {
 import { unzipSync } from 'fflate';
 import { WaveSignApi } from './api';
 import { ConfirmUploadModal, PassphraseModal } from './modals';
+import { VerificationModal } from './verification-modal';
 import {
   MAX_UPLOAD_BYTES,
   availableOutputPaths,
@@ -248,6 +249,8 @@ export default class WaveSignPlugin extends Plugin {
     if (!(await this.confirmUpload([file, signatureFile]))) return;
     const passphrase = await this.requestPassphrase();
     if (!passphrase) return;
+    const verification = new VerificationModal(this.app);
+    verification.open();
     try {
       const result = await this.api.verify(
         token,
@@ -258,9 +261,9 @@ export default class WaveSignPlugin extends Plugin {
         await this.app.vault.readBinary(signatureFile),
         passphrase,
       );
-      new Notice(result.is_valid ? `Authentic: ${result.verdict}` : `Verification failed: ${result.verdict}`, 10_000);
+      verification.showResult(result);
     } catch (error) {
-      new Notice(error instanceof Error ? error.message : 'Verification failed.');
+      verification.showError(error instanceof Error ? error.message : 'Verification failed. No verdict is available.');
     }
   }
 }

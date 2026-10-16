@@ -37,6 +37,8 @@ Default outputs are created beside the original:
 
 Existing outputs are preserved; WaveSign chooses a versioned filename on collision.
 
+Verification shows progress and keeps the final verdict open until you dismiss it. A timeout or network failure is not an authenticity verdict.
+
 ## Privacy and security
 
 - Selected files and operation passphrases are sent over HTTPS to `wave-sign.com` and processed on WaveSign servers.

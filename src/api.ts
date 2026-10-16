@@ -1,4 +1,5 @@
 import { requestUrl } from 'obsidian';
+import { parseVerificationResult, withVerificationTimeout } from './verification-result';
 
 const API_BASE = 'https://wave-sign.com/api/v1';
 
@@ -125,7 +126,7 @@ export class WaveSignApi {
       { name: 'sig_file', filename: signatureFilename, contentType: 'application/json', bytes: new Uint8Array(signature) },
       { name: 'key', bytes: new TextEncoder().encode(passphrase) },
     ], boundary);
-    const response = await requestUrl({
+    const response = await withVerificationTimeout(requestUrl({
       url: `${API_BASE}/signing/package/verify`,
       method: 'POST',
       headers: {
@@ -134,8 +135,8 @@ export class WaveSignApi {
       },
       body,
       throw: false,
-    });
+    }));
     if (response.status !== 200) throw new Error(errorMessage(response.status, response.json));
-    return response.json as { is_valid: boolean; verdict: string };
+    return parseVerificationResult(response.json);
   }
 }

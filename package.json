@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "tsc --noEmit --skipLibCheck && node esbuild.config.mjs production",
-    "test": "tsc src/naming.ts --outDir .test-build --module ESNext --target ES2021 --moduleResolution node --skipLibCheck && node tests/naming.test.mjs"
+    "test": "tsc src/naming.ts src/verification-result.ts --outDir .test-build --module ESNext --target ES2021 --moduleResolution node --skipLibCheck && node tests/naming.test.mjs && node tests/verification.test.mjs"
   },
   "keywords": ["obsidian", "file-authentication", "tamper-evident"],
   "license": "MIT",
