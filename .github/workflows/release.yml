@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - '*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag to build as a draft beta
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -13,8 +19,12 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -23,7 +33,7 @@ jobs:
       - run: npm test
       - run: npm run build
       - name: Confirm tag matches manifest
-        run: test "${GITHUB_REF_NAME}" = "$(node -p "require('./manifest.json').version")"
+        run: test "${RELEASE_TAG}" = "$(node -p "require('./manifest.json').version")"
       - name: Attest release assets
         uses: actions/attest@v4
         with:
@@ -35,8 +45,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
-          gh release create "$GITHUB_REF_NAME"
+          gh release create "$RELEASE_TAG"
           main.js manifest.json styles.css
           --verify-tag
-          --title "$GITHUB_REF_NAME"
-          --generate-notes
+          --title "$RELEASE_TAG"
+          --draft --prerelease
+          --notes-file "docs/RELEASE_${RELEASE_TAG}.md"

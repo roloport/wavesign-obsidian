@@ -8,12 +8,13 @@ import {
   TAbstractFile,
   TFile,
 } from 'obsidian';
-import { unzipSync } from 'fflate';
+import { readSignedPackage } from './package';
 import { WaveSignApi } from './api';
 import { ConfirmUploadModal, PassphraseModal } from './modals';
 import { VerificationModal } from './verification-modal';
 import {
   MAX_UPLOAD_BYTES,
+  MAX_SIGNATURE_UPLOAD_BYTES,
   availableOutputPaths,
   contentTypeFor,
   isSupportedFile,
@@ -35,9 +36,17 @@ const sleep = (milliseconds: number) => new Promise((resolve) => window.setTimeo
 export default class WaveSignPlugin extends Plugin {
   settings: WaveSignSettings = DEFAULT_SETTINGS;
   api = new WaveSignApi();
+  private connectionGeneration = 0;
+  private connecting = false;
+
+  onunload(): void {
+    this.connectionGeneration += 1;
+    this.connecting = false;
+  }
 
   async onload(): Promise<void> {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    this.settings.tokenSecretId = TOKEN_SECRET_ID;
     this.addSettingTab(new WaveSignSettingTab(this.app, this));
 
     this.addCommand({ id: 'connect-account', name: 'Connect WaveSign account', callback: () => void this.connect() });
@@ -88,19 +97,32 @@ export default class WaveSignPlugin extends Plugin {
   }
 
   async connect(): Promise<void> {
+    if (this.connecting) {
+      new Notice('A WaveSign connection request is already pending in your browser.');
+      return;
+    }
     if (this.token()) {
       new Notice('WaveSign is already connected. Disconnect first to use another account.');
       return;
     }
+    this.connecting = true;
+    const generation = ++this.connectionGeneration;
     try {
       const device = await this.api.startDevice();
+      if (generation !== this.connectionGeneration) return;
       window.open(device.verification_uri_complete, '_blank', 'noopener,noreferrer');
       new Notice(`Approve code ${device.user_code} in your browser.`, 10_000);
       const deadline = Date.now() + device.expires_in * 1000;
       while (Date.now() < deadline) {
         await sleep(Math.max(device.interval, 5) * 1000);
+        if (generation !== this.connectionGeneration) return;
         const result = await this.api.pollDevice(device.device_code);
         if (!result) continue;
+        if (generation !== this.connectionGeneration) {
+          try { await this.api.revoke(result.access_token); }
+          catch { new Notice('A cancelled connection could not be revoked remotely. Review connections on the WaveSign website.'); }
+          return;
+        }
         this.app.secretStorage.setSecret(TOKEN_SECRET_ID, result.access_token);
         this.settings = {
           tokenSecretId: TOKEN_SECRET_ID,
@@ -113,20 +135,26 @@ export default class WaveSignPlugin extends Plugin {
       }
       throw new Error('The connection request expired. Start again.');
     } catch (error) {
-      new Notice(error instanceof Error ? error.message : 'Could not connect WaveSign.');
+      if (generation === this.connectionGeneration) new Notice(error instanceof Error ? error.message : 'Could not connect WaveSign.');
+    } finally {
+      if (generation === this.connectionGeneration) this.connecting = false;
     }
   }
 
   async disconnect(): Promise<void> {
+    this.connectionGeneration += 1;
+    this.connecting = false;
     const token = this.token();
+    // Stop new operations immediately, even while remote revocation is offline.
+    this.app.secretStorage.setSecret(TOKEN_SECRET_ID, '');
+    this.settings = { ...DEFAULT_SETTINGS };
+    try { await this.saveSettings(); }
+    catch { new Notice('The local token was removed, but connection settings could not be saved.'); }
     try {
       if (token) await this.api.revoke(token);
     } catch (error) {
-      new Notice(error instanceof Error ? `${error.message} The local token will still be removed.` : 'Server revocation failed; removing the local token.');
+      new Notice('The local token was removed, but server revocation did not complete. Review connections on the WaveSign website.');
     } finally {
-      this.app.secretStorage.setSecret(this.settings.tokenSecretId, '');
-      this.settings = { ...DEFAULT_SETTINGS };
-      await this.saveSettings();
       new Notice('WaveSign disconnected.');
     }
   }
@@ -162,13 +190,18 @@ export default class WaveSignPlugin extends Plugin {
     if (!eligible.length || !(await this.confirmUpload(eligible))) return;
     const passphrase = await this.requestPassphrase();
     if (!passphrase) return;
+    if (token !== this.token()) return;
 
     let completed = 0;
     const failures: string[] = [];
     for (const file of eligible) {
       try {
+        if (token !== this.token()) break;
         const source = await this.app.vault.readBinary(file);
+        if (source.byteLength > MAX_UPLOAD_BYTES) throw new Error('File is larger than 25 MiB.');
+        if (token !== this.token()) break;
         const archive = await this.api.sign(token, file.name, contentTypeFor(file), source, passphrase);
+        if (token !== this.token()) break;
         await this.writeSignedPackage(file, archive);
         completed += 1;
       } catch (error) {
@@ -180,17 +213,7 @@ export default class WaveSignPlugin extends Plugin {
   }
 
   private async writeSignedPackage(input: TFile, archive: ArrayBuffer): Promise<void> {
-    const entries = unzipSync(new Uint8Array(archive));
-    const names = Object.keys(entries);
-    if (names.length > 4) throw new Error('The server returned an unexpected package.');
-    const mediaName = names.find((name) => /(^|\/)signed\.(png|pdf)$/i.test(name));
-    const signatureName = names.find((name) => /(^|\/)sig\.json$/i.test(name));
-    if (!mediaName || !signatureName) throw new Error('The server package is missing signed media or sig.json.');
-    const media = entries[mediaName];
-    const signature = entries[signatureName];
-    if (!media.length || !signature.length || media.length + signature.length > 100 * 1024 * 1024) {
-      throw new Error('The server returned an invalid or oversized package.');
-    }
+    const { media, signature } = readSignedPackage(archive, input.extension.toLowerCase() === 'pdf');
 
     const paths = availableOutputPaths(this.app.vault, input.path);
     const suffix = crypto.randomUUID();
@@ -198,9 +221,9 @@ export default class WaveSignPlugin extends Plugin {
     const temporarySignature = `${paths.signature}.wavesign-tmp-${suffix}`;
     const created: string[] = [];
     try {
-      await this.app.vault.createBinary(temporaryMedia, media.buffer.slice(media.byteOffset, media.byteOffset + media.byteLength));
+      await this.app.vault.createBinary(temporaryMedia, new Uint8Array(media).buffer);
       created.push(temporaryMedia);
-      await this.app.vault.createBinary(temporarySignature, signature.buffer.slice(signature.byteOffset, signature.byteOffset + signature.byteLength));
+      await this.app.vault.createBinary(temporarySignature, new Uint8Array(signature).buffer);
       created.push(temporarySignature);
       const mediaFile = this.app.vault.getAbstractFileByPath(temporaryMedia);
       const signatureFile = this.app.vault.getAbstractFileByPath(temporarySignature);
@@ -210,10 +233,15 @@ export default class WaveSignPlugin extends Plugin {
       await this.app.vault.rename(mediaFile, paths.media);
       created.push(paths.media);
     } catch (error) {
+      const remaining: string[] = [];
       for (const path of created.reverse()) {
         const artifact = this.app.vault.getAbstractFileByPath(path);
-        if (artifact) await this.app.vault.delete(artifact).catch(() => undefined);
+        if (artifact) {
+          try { await this.app.vault.delete(artifact); }
+          catch { remaining.push(path); }
+        }
       }
+      if (remaining.length) throw new Error(`Signing failed and cleanup was incomplete. Remove these incomplete outputs before sharing: ${remaining.join(', ')}`);
       throw error;
     }
   }
@@ -246,19 +274,33 @@ export default class WaveSignPlugin extends Plugin {
     }
     const signatureFile = this.app.vault.getAbstractFileByPath(signaturePath);
     if (!(signatureFile instanceof TFile)) return;
+    if (file.stat.size > MAX_UPLOAD_BYTES || signatureFile.stat.size > MAX_SIGNATURE_UPLOAD_BYTES) {
+      new Notice('Verification accepts signed media up to 25 MiB and signature JSON up to 1 MiB.');
+      return;
+    }
     if (!(await this.confirmUpload([file, signatureFile]))) return;
     const passphrase = await this.requestPassphrase();
     if (!passphrase) return;
+    if (token !== this.token()) return;
     const verification = new VerificationModal(this.app);
     verification.open();
     try {
+      const media = await this.app.vault.readBinary(file);
+      const signature = await this.app.vault.readBinary(signatureFile);
+      if (media.byteLength > MAX_UPLOAD_BYTES || signature.byteLength > MAX_SIGNATURE_UPLOAD_BYTES) {
+        throw new Error('Verification accepts signed media up to 25 MiB and signature JSON up to 1 MiB.');
+      }
+      if (token !== this.token()) {
+        verification.showError('WaveSign was disconnected before upload. No verdict is available.');
+        return;
+      }
       const result = await this.api.verify(
         token,
         file.name,
         contentTypeFor(file),
-        await this.app.vault.readBinary(file),
+        media,
         signatureFile.name,
-        await this.app.vault.readBinary(signatureFile),
+        signature,
         passphrase,
       );
       verification.showResult(result);

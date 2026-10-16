@@ -5,6 +5,7 @@ export { outputPaths } from './naming';
 
 export const SUPPORTED_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'webp', 'pdf']);
 export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+export const MAX_SIGNATURE_UPLOAD_BYTES = 1024 * 1024;
 
 export function isSupportedFile(file: TFile | null | undefined): file is TFile {
   return Boolean(file && SUPPORTED_EXTENSIONS.has(file.extension.toLowerCase()));

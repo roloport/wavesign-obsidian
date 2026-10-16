@@ -4,13 +4,13 @@ WaveSign creates and verifies tamper-evident authentication packages for images 
 
 ## Status
 
-Version `0.1.0` is an early beta. Install it manually in a test vault or through BRAT after a beta release is published. Obsidian 1.11.5 or later is required; this is the first desktop release with Secret Storage encrypted at rest.
+Version `0.1.0` is a beta candidate, not yet publicly released. Use a separate test vault. Obsidian 1.11.5 or later is required; this is the first desktop release with Secret Storage encrypted at rest. Real Obsidian testing has covered Windows 1.14.4; other desktop platforms and mobile are not validated. See [test coverage](docs/TESTING.md).
 
 An account is required. Connecting opens `wave-sign.com` in the browser for a one-time approval; the plugin never receives your account password. The resulting integration token is limited to file signing and verification, expires after 90 days, and can be revoked by disconnecting.
 
 ## Beta installation
 
-After the first GitHub release is published, add `roloport/wavesign-obsidian` to BRAT. For a manual test, copy `main.js`, `manifest.json`, and `styles.css` into:
+After the first GitHub release is published, add `roloport/wavesign-obsidian` to BRAT (1.1.0 or later); select the `0.1.0` release for a frozen beta. Draft releases cannot be installed through BRAT. For a manual test, copy `main.js`, `manifest.json`, and `styles.css` into:
 
 ```text
 <your-vault>/.obsidian/plugins/wavesign/
@@ -39,6 +39,8 @@ Existing outputs are preserved; WaveSign chooses a versioned filename on collisi
 
 Verification shows progress and keeps the final verdict open until you dismiss it. A timeout or network failure is not an authenticity verdict.
 
+Uploads are limited to 25 MiB for media and 1 MiB for verification JSON. Longer PDFs can exceed the metadata limit. Cancelling either pre-upload prompt sends nothing; closing a verification window or timing out does not cancel work already submitted to the server. If storage prevents automatic cleanup after a failed write, the plugin identifies incomplete files that must not be shared as a finished package.
+
 ## Privacy and security
 
 - Selected files and operation passphrases are sent over HTTPS to `wave-sign.com` and processed on WaveSign servers.
@@ -59,3 +61,5 @@ npm run build
 ```
 
 Release assets are `main.js`, `manifest.json`, and `styles.css`.
+
+The release workflow builds a draft pre-release for manual review; it never automatically distributes a beta. Release format follows the [Obsidian release guide](https://docs.obsidian.md/Plugins/Releasing/Submit%20your%20plugin) and [BRAT developer guide](https://github.com/TfTHacker/obsidian42-brat/blob/main/BRAT-DEVELOPER-GUIDE.md), checked 2026-10-16. Bundled fflate is MIT-licensed; its full license is included in the generated bundle.

@@ -22,11 +22,26 @@ Verified 2026-10-16 on Windows, Obsidian 1.14.4, in a separate test vault with s
 
 These tests do not establish formal cryptographic guarantees.
 
+## Failure-mode hardening (2026-10-16)
+
+The real plugin/API/package implementations were exercised with a mocked host and synthetic responses. Passing cases cover:
+
+- Malformed, empty, extra-entry, duplicate-entry, path-traversal, wrong-format, invalid-JSON, and oversized-declared ZIP contents. Metadata is kept opaque; both image objects and per-page PDF arrays are accepted. Directory sizes are checked before decompression allocation.
+- Failure at each of two staging writes and two final renames removes all tracked partial outputs, preserving the original. Signature-name collisions preserve existing files. Failed cleanup reports remaining paths explicitly.
+- Cancellation at either pre-upload prompt makes no API request or output. A batch continues after one file fails.
+- Duplicate Connect requests are suppressed. Disconnect blocks new operations before the remote request finishes. Approval arriving after disconnect is revoked instead of stored; unloading cancels pending browser opening.
+- Offline, timeout, 401/403/413/422/429/502, HTML/non-JSON error responses, malformed verification JSON, invalid token scopes, and untrusted approval addresses. Raw transport errors and server bodies are not displayed.
+- Previously produced real production outputs from all four formats pass the updated package validator without displaying signature contents. This is a container-compatibility check, not a new authenticity test.
+
+Local `npm test`, TypeScript checking, and the production build pass. CI runs these automated checks on Windows/macOS/Linux with Node 20; this does not establish Obsidian app compatibility on those platforms. The generated bundle includes the bundled ZIP library's MIT license.
+
+The development SDK is pinned to Obsidian 1.14.4 with a refreshed lockfile, replacing its vulnerable development-only Moment dependency. The complete dependency audit reports zero known vulnerabilities as of 2026-10-16. Neither the SDK nor Moment is bundled into the released plugin.
+
 ## Still pending before external beta
 
 - Actual desktop disconnection and its local guard passed. Service-side token revocation was tested separately against production; the old real desktop token was not extracted from SecretStorage for an independent post-disconnect API query.
-- Complete focused failure-mode review (offline/rate-limit/error responses, malformed ZIP/JSON, partial-output cleanup, and cancellation).
+- The focused mocked failure-mode review above passed. Run one final real Obsidian connect/sign/verify/disconnect smoke test against the final candidate bundle; previous real-app acceptance predates those hardening changes.
 - Mobile, macOS, and Linux have not been tested. Do not describe them as validated.
-- No beta tag/release or Community directory submission has been published.
+- A draft beta may be prepared after CI, but must stay unpublished until the final candidate smoke test and release review. No Community directory submission has been made.
 
 The proprietary signing core and private service credential are not part of this repository or its release assets. Operation keys, account codes, tokens, and signature contents must not be added to test reports.

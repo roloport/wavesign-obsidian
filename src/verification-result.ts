@@ -12,15 +12,14 @@ export function parseVerificationResult(value: unknown): VerificationResult {
   return { is_valid: value.is_valid, verdict: value.verdict };
 }
 
-export async function withVerificationTimeout<T>(request: PromiseLike<T>, timeoutMs = 150_000): Promise<T> {
+export async function withVerificationTimeout<T>(request: PromiseLike<T>, timeoutMs = 150_000,
+  message = 'Verification timed out. No verdict is available. Server processing may still finish; wait before trying again.'): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
       Promise.resolve(request),
       new Promise<never>((_resolve, reject) => {
-        timer = setTimeout(() => reject(new Error(
-          'Verification timed out. No verdict is available. Server processing may still finish; wait before trying again.',
-        )), timeoutMs);
+        timer = setTimeout(() => reject(new Error(message)), timeoutMs);
       }),
     ]);
   } finally {

@@ -58,5 +58,5 @@ offline.api = { async revoke() { throw new Error('Offline'); } };
 await offline.disconnect();
 assert.equal(offline.isConnected(), false, 'a revocation failure must still remove the local credential');
 assert.equal(offline.savedSettings.integrationId, '');
-assert.ok(notices.some((message) => /local token will still be removed/.test(message)));
+assert.ok(notices.some((message) => /local token was removed, but server revocation did not complete/.test(message)));
 console.log('WaveSign disconnected-operation and credential-cleanup tests passed.');

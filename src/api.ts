@@ -1,4 +1,4 @@
-import { requestUrl } from 'obsidian';
+import { requestUrl, type RequestUrlParam, type RequestUrlResponse } from 'obsidian';
 import { parseVerificationResult, withVerificationTimeout } from './verification-result';
 
 const API_BASE = 'https://wave-sign.com/api/v1';
@@ -32,37 +32,67 @@ export function multipartBody(parts: MultipartPart[], boundary: string): ArrayBu
   return concat(chunks);
 }
 
-function errorMessage(status: number, json: unknown): string {
-  const detail = typeof json === 'object' && json !== null && 'detail' in json
-    ? String((json as { detail: unknown }).detail)
-    : '';
+function errorMessage(status: number): string {
   if (status === 401) return 'Your WaveSign connection is missing, expired, or revoked. Connect again.';
+  if (status === 403) return 'WaveSign did not allow this operation. Check your connection permissions.';
   if (status === 413) return 'This file is too large for WaveSign.';
   if (status === 429) return 'WaveSign is receiving too many requests. Please wait and try again.';
-  return detail || `WaveSign request failed (${status}).`;
+  if (status >= 500) return 'WaveSign is temporarily unavailable. Please try again later.';
+  return `WaveSign request failed (${status}). Please check the files and try again.`;
+}
+
+function responseJson(response: RequestUrlResponse): unknown {
+  try { return response.json; }
+  catch { throw new Error('WaveSign returned an unreadable response. No result is available.'); }
+}
+
+function record(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function nonempty(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
 }
 
 export class WaveSignApi {
+  constructor(private timeoutMs = 150_000) {}
+
+  private async request(options: RequestUrlParam, verification = false): Promise<RequestUrlResponse> {
+    // Never expose raw transport errors or server bodies, which may echo credentials.
+    const pending = Promise.resolve().then(() => requestUrl(options)).catch(() => {
+      throw new Error('Could not reach WaveSign. Check your internet connection and try again.');
+    });
+    return withVerificationTimeout(pending, this.timeoutMs, verification ? undefined
+      : 'WaveSign request timed out. Server processing may still finish; wait before trying again.');
+  }
+
   async startDevice() {
-    const response = await requestUrl({
+    const response = await this.request({
       url: `${API_BASE}/integrations/device/start`,
       method: 'POST',
       contentType: 'application/json',
       body: JSON.stringify({ client_name: 'Obsidian', scopes: ['files:sign', 'files:verify'] }),
       throw: false,
     });
-    if (response.status !== 200) throw new Error(errorMessage(response.status, response.json));
-    return response.json as {
-      device_code: string;
-      user_code: string;
-      verification_uri_complete: string;
-      expires_in: number;
-      interval: number;
-    };
+    if (response.status !== 200) throw new Error(errorMessage(response.status));
+    const value = responseJson(response);
+    if (!record(value) || !nonempty(value.device_code) || !nonempty(value.user_code)
+      || !nonempty(value.verification_uri_complete)
+      || typeof value.expires_in !== 'number' || !Number.isFinite(value.expires_in) || value.expires_in <= 0 || value.expires_in > 1800
+      || typeof value.interval !== 'number' || !Number.isFinite(value.interval) || value.interval < 1 || value.interval > 60) {
+      throw new Error('WaveSign returned an invalid connection request.');
+    }
+    const url = new URL(value.verification_uri_complete);
+    if (url.origin !== 'https://wave-sign.com' || url.pathname !== '/connect/obsidian'
+      || url.username || url.password || url.searchParams.get('user_code') !== value.user_code) {
+      throw new Error('WaveSign returned an invalid approval address.');
+    }
+    return { device_code: value.device_code, user_code: value.user_code,
+      verification_uri_complete: url.href, expires_in: value.expires_in, interval: value.interval };
   }
 
   async pollDevice(deviceCode: string) {
-    const response = await requestUrl({
+    const response = await this.request({
       url: `${API_BASE}/integrations/device/token`,
       method: 'POST',
       contentType: 'application/json',
@@ -70,24 +100,27 @@ export class WaveSignApi {
       throw: false,
     });
     if (response.status === 202 || response.status === 429) return null;
-    if (response.status !== 200) throw new Error(errorMessage(response.status, response.json));
-    return response.json as {
-      access_token: string;
-      integration_id: string;
-      expires_in: number;
-      scopes: string[];
-    };
+    if (response.status !== 200) throw new Error(errorMessage(response.status));
+    const value = responseJson(response);
+    if (!record(value) || !nonempty(value.access_token) || !nonempty(value.integration_id)
+      || typeof value.expires_in !== 'number' || !Number.isFinite(value.expires_in) || value.expires_in <= 0
+      || !Array.isArray(value.scopes) || !value.scopes.every(nonempty)
+      || !value.scopes.includes('files:sign') || !value.scopes.includes('files:verify')) {
+      throw new Error('WaveSign returned an invalid connection result.');
+    }
+    return { access_token: value.access_token, integration_id: value.integration_id,
+      expires_in: value.expires_in, scopes: value.scopes as string[] };
   }
 
   async revoke(token: string): Promise<void> {
-    const response = await requestUrl({
+    const response = await this.request({
       url: `${API_BASE}/integrations/current`,
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
       throw: false,
     });
     if (response.status !== 204 && response.status !== 401) {
-      throw new Error(errorMessage(response.status, response.json));
+      throw new Error(errorMessage(response.status));
     }
   }
 
@@ -97,7 +130,7 @@ export class WaveSignApi {
       { name: 'file', filename, contentType, bytes: new Uint8Array(file) },
       { name: 'key', bytes: new TextEncoder().encode(passphrase) },
     ], boundary);
-    const response = await requestUrl({
+    const response = await this.request({
       url: `${API_BASE}/signing/package/sign`,
       method: 'POST',
       headers: {
@@ -107,7 +140,7 @@ export class WaveSignApi {
       body,
       throw: false,
     });
-    if (response.status !== 200) throw new Error(errorMessage(response.status, response.json));
+    if (response.status !== 200) throw new Error(errorMessage(response.status));
     return response.arrayBuffer;
   }
 
@@ -126,7 +159,7 @@ export class WaveSignApi {
       { name: 'sig_file', filename: signatureFilename, contentType: 'application/json', bytes: new Uint8Array(signature) },
       { name: 'key', bytes: new TextEncoder().encode(passphrase) },
     ], boundary);
-    const response = await withVerificationTimeout(requestUrl({
+    const response = await this.request({
       url: `${API_BASE}/signing/package/verify`,
       method: 'POST',
       headers: {
@@ -135,8 +168,8 @@ export class WaveSignApi {
       },
       body,
       throw: false,
-    }));
-    if (response.status !== 200) throw new Error(errorMessage(response.status, response.json));
-    return parseVerificationResult(response.json);
+    }, true);
+    if (response.status !== 200) throw new Error(errorMessage(response.status));
+    return parseVerificationResult(responseJson(response));
   }
 }
