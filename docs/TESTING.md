@@ -37,12 +37,12 @@ Local `npm test`, TypeScript checking, and the production build pass. CI runs th
 
 The development SDK is pinned to Obsidian 1.14.4 with a refreshed lockfile, replacing its vulnerable development-only Moment dependency. The complete dependency audit reports zero known vulnerabilities as of 2026-10-16. Neither the SDK nor Moment is bundled into the released plugin.
 
-## Still pending before external beta
+## Beta scope and remaining coverage
 
 - Actual desktop disconnection and its local guard passed. Service-side token revocation was tested separately against production; the old real desktop token was not extracted from SecretStorage for an independent post-disconnect API query.
-- The focused mocked failure-mode review passed. The final candidate's real connection, four-format signing, and all four output-verification checks also passed as recorded below. The owner has been asked to finish the final candidate Disconnect check.
+- The focused mocked failure-mode review passed. The final candidate's real connection, four-format signing, all four output-verification checks, disconnect, and disconnected-operation guards also passed as recorded below.
 - Mobile, macOS, and Linux have not been tested. Do not describe them as validated.
-- A draft beta may be prepared after CI, but must stay unpublished until the final candidate smoke test and release review. No Community directory submission has been made.
+- On 2026-10-16, after reviewing this coverage, the owner explicitly approved publishing `0.1.0` as a small Windows-tested BRAT beta with other platforms clearly marked unvalidated. This limits the first beta's scope; it is not a claim that the broader platform test plan is complete. No Community directory submission has been made.
 
 The proprietary signing core and private service credential are not part of this repository or its release assets. Operation keys, account codes, tokens, and signature contents must not be added to test reports.
 
@@ -55,6 +55,6 @@ Tested 2026-10-16 in Windows Obsidian 1.14.4 with the installed bundle matching 
 - Each of those four new outputs was individually verified through its real Obsidian file menu against production. All four returned Authentic / AUTHENTIC in the persistent result modal.
 - SHA-256 checks confirmed all four originals and `Start here.md` were byte-identical. No `.wavesign-tmp-*` files remained.
 - The disposable operation key was cleared from temporary test memory and was not written to reports or plugin settings.
-- The owner was asked to click Disconnect for the last candidate account-cleanup check. This final action is not yet recorded as complete.
+- The owner clicked Disconnect. The real settings panel showed Not connected and saved connection ID/time were empty. Both signing and verification then showed “Connect your WaveSign account first.” without upload confirmation or any new output. The fixture/output count stayed at 20, with no staging files. The old credential was not extracted to independently query its server-side state.
 
-The release remains a draft. This smoke test does not establish macOS/Linux/mobile app compatibility or change the outstanding platform/release-review requirements.
+The Windows candidate smoke test is complete. The owner approved its limited Windows-tested beta release; macOS/Linux/mobile app compatibility and Community directory readiness remain unestablished.

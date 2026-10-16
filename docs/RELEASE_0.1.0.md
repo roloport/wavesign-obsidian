@@ -1,8 +1,12 @@
-# WaveSign 0.1.0 beta candidate
+# WaveSign 0.1.0 — Windows-tested beta
 
 Sign local PNG/JPG/WEBP/PDF attachments and verify signed PNG/PDF files from Obsidian. The MIT-licensed client connects to the WaveSign service; the proprietary signing engine stays on the server.
 
-This release remains a **draft** until the final candidate smoke test and release review are complete. It is not yet available through BRAT or the Community directory.
+Early beta for a small Windows tester group, available through BRAT or manual installation. Use a separate test vault. This is not a Community directory release. macOS, Linux, Android, and iOS remain unvalidated in the real Obsidian app.
+
+## Install
+
+In BRAT 1.1.0 or later, add `roloport/wavesign-obsidian` and choose release `0.1.0`. Alternatively, copy the three attached assets (`main.js`, `manifest.json`, `styles.css`) into `<vault>/.obsidian/plugins/wavesign/`, reload Obsidian, and enable WaveSign. Then run **Connect WaveSign account** and approve the connection in your browser.
 
 ## What is included
 
@@ -16,7 +20,7 @@ This release remains a **draft** until the final candidate smoke test and releas
 
 - Obsidian 1.11.5 or later, a WaveSign account, and internet access.
 - Real application testing: Windows, Obsidian 1.14.4. macOS, Linux, Android, and iOS are not yet validated in Obsidian. Automated host-mocked tests are not a substitute for real-app tests.
-- The final hardened candidate passed real Windows connection, four-format signing, and individual verification of all four new outputs, preserving originals. The final owner-operated Disconnect check and release review remain pending.
+- The final hardened candidate passed real Windows connection, four-format signing, individual verification of all four new outputs, and owner-operated disconnect, preserving originals. Disconnected signing and verification both stop before upload with a connection-required notice.
 - Selected files and passphrases are sent over HTTPS and processed server-side. Passphrases are not stored by the plugin; no client-side telemetry is included.
 - Verification requires the signed file, matching JSON, and original passphrase. Keep both output files together; lost JSON cannot currently be regenerated.
 - JPG/WEBP outputs are PNG. PDFs are rasterized image-PDFs, losing selectable/searchable text, forms, annotations, and original structure.

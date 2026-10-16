@@ -4,13 +4,13 @@ WaveSign creates and verifies tamper-evident authentication packages for images 
 
 ## Status
 
-Version `0.1.0` is a beta candidate, not yet publicly released. Use a separate test vault. Obsidian 1.11.5 or later is required; this is the first desktop release with Secret Storage encrypted at rest. Real Obsidian testing has covered Windows 1.14.4; other desktop platforms and mobile are not validated. See [test coverage](docs/TESTING.md).
+Version `0.1.0` is an early Windows-tested beta for a small tester group. Use a separate test vault. Obsidian 1.11.5 or later is required; this is the first desktop release with Secret Storage encrypted at rest. Real Obsidian testing has covered Windows 1.14.4; macOS, Linux, Android, and iOS are not validated. It is not listed in the Community directory. See [test coverage](docs/TESTING.md).
 
 An account is required. Connecting opens `wave-sign.com` in the browser for a one-time approval; the plugin never receives your account password. The resulting integration token is limited to file signing and verification, expires after 90 days, and can be revoked by disconnecting.
 
 ## Beta installation
 
-After the first GitHub release is published, add `roloport/wavesign-obsidian` to BRAT (1.1.0 or later); select the `0.1.0` release for a frozen beta. Draft releases cannot be installed through BRAT. For a manual test, copy `main.js`, `manifest.json`, and `styles.css` into:
+In BRAT (1.1.0 or later), add `roloport/wavesign-obsidian` and select the `0.1.0` release for a frozen beta. See the [GitHub release](https://github.com/roloport/wavesign-obsidian/releases/tag/0.1.0). For a manual test, download `main.js`, `manifest.json`, and `styles.css` from that release and copy them into:
 
 ```text
 <your-vault>/.obsidian/plugins/wavesign/
