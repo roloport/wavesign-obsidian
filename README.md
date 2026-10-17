@@ -10,6 +10,8 @@ An account is required. Connecting opens `wave-sign.com` in the browser for a on
 
 ## Beta installation
 
+New tester? Start with the [15-minute installation guide and feedback checklist](docs/BETA_TESTER_GUIDE.md).
+
 In BRAT (1.1.0 or later), add `roloport/wavesign-obsidian` and select the `0.1.0` release for a frozen beta. See the [GitHub release](https://github.com/roloport/wavesign-obsidian/releases/tag/0.1.0). For a manual test, download `main.js`, `manifest.json`, and `styles.css` from that release and copy them into:
 
 ```text
