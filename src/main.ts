@@ -317,7 +317,7 @@ class WaveSignSettingTab extends PluginSettingTab {
 
   display(): void {
     this.containerEl.empty();
-    new Setting(this.containerEl).setName('WaveSign account').setHeading();
+    new Setting(this.containerEl).setName('Account').setHeading();
     const connected = this.plugin.isConnected();
     new Setting(this.containerEl)
       .setName(connected ? 'Connected' : 'Not connected')

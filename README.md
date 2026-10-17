@@ -4,7 +4,7 @@ WaveSign creates and verifies tamper-evident authentication packages for images 
 
 ## Status
 
-Version `0.1.0` is an early Windows-tested release. Use a separate test vault. Obsidian 1.11.5 or later is required; this is the first desktop release with Secret Storage encrypted at rest. Real Obsidian testing has covered Windows 1.14.4; macOS, Linux, Android, and iOS are not validated. Check the [Community directory listing](https://community.obsidian.md/plugins/wavesign) for current review and installation availability. See [test coverage](docs/TESTING.md).
+Version `0.1.1` changes only the account settings heading from the Windows-tested `0.1.0` release. Use a separate test vault. Obsidian 1.11.5 or later is required; this is the first desktop release with Secret Storage encrypted at rest. Real Obsidian testing has covered Windows 1.14.4; macOS, Linux, Android, and iOS are not validated. Check the [Community directory listing](https://community.obsidian.md/plugins/wavesign) for current review and installation availability. See [test coverage](docs/TESTING.md).
 
 An account is required. Connecting opens `wave-sign.com` in the browser for a one-time approval; the plugin never receives your account password. The resulting integration token is limited to file signing and verification, expires after 90 days, and can be revoked by disconnecting.
 
@@ -14,7 +14,7 @@ Use **Add to Obsidian** on the [Community directory listing](https://community.o
 
 New tester? Start with the [15-minute installation guide and feedback checklist](docs/BETA_TESTER_GUIDE.md).
 
-In BRAT (1.1.0 or later), add `roloport/wavesign-obsidian` and select the `0.1.0` release for a frozen beta. See the [GitHub release](https://github.com/roloport/wavesign-obsidian/releases/tag/0.1.0). For a manual test, download `main.js`, `manifest.json`, and `styles.css` from that release and copy them into:
+In BRAT (1.1.0 or later), add `roloport/wavesign-obsidian` and select the `0.1.1` release for a frozen version. See the [GitHub release](https://github.com/roloport/wavesign-obsidian/releases/tag/0.1.1). For a manual test, download `main.js`, `manifest.json`, and `styles.css` from that release and copy them into:
 
 ```text
 <your-vault>/.obsidian/plugins/wavesign/

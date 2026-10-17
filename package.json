@@ -1,6 +1,6 @@
 {
   "name": "wavesign-obsidian",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "WaveSign plugin for Obsidian",
   "main": "main.js",
   "type": "module",
