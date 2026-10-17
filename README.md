@@ -4,11 +4,13 @@ WaveSign creates and verifies tamper-evident authentication packages for images 
 
 ## Status
 
-Version `0.1.0` is an early Windows-tested beta for a small tester group. Use a separate test vault. Obsidian 1.11.5 or later is required; this is the first desktop release with Secret Storage encrypted at rest. Real Obsidian testing has covered Windows 1.14.4; macOS, Linux, Android, and iOS are not validated. It is not listed in the Community directory. See [test coverage](docs/TESTING.md).
+Version `0.1.0` is an early Windows-tested release. Use a separate test vault. Obsidian 1.11.5 or later is required; this is the first desktop release with Secret Storage encrypted at rest. Real Obsidian testing has covered Windows 1.14.4; macOS, Linux, Android, and iOS are not validated. Check the [Community directory listing](https://community.obsidian.md/plugins/wavesign) for current review and installation availability. See [test coverage](docs/TESTING.md).
 
 An account is required. Connecting opens `wave-sign.com` in the browser for a one-time approval; the plugin never receives your account password. The resulting integration token is limited to file signing and verification, expires after 90 days, and can be revoked by disconnecting.
 
-## Beta installation
+## Installation
+
+Use **Add to Obsidian** on the [Community directory listing](https://community.obsidian.md/plugins/wavesign) once its review permits installation. If the button is disabled while review is pending, use the BRAT or manual installation below.
 
 New tester? Start with the [15-minute installation guide and feedback checklist](docs/BETA_TESTER_GUIDE.md).
 
@@ -49,6 +51,7 @@ Uploads are limited to 25 MiB for media and 1 MiB for verification JSON. Longer 
 - The plugin stores its revocable WaveSign integration token in Obsidian SecretStorage.
 - The signing passphrase is requested for each operation and is not stored by the plugin.
 - The plugin contains no WaveSign server credential or proprietary signing engine.
+- The plugin client is MIT-licensed; the server-side signing engine remains proprietary.
 - The plugin has no client-side telemetry.
 - Verification requires the signed media, matching `sig.json`, and the same passphrase. The metadata cannot currently be regenerated if it is lost.
 
